@@ -8,7 +8,9 @@ import Middleware from '../auth/middleware';
 import moment from 'moment';
 import _ from 'lodash';
 import HeaderNav from '../layouts/header';
-import {Col, Row} from 'react-bootstrap';
+import {Col, Row, FormControl, FormGroup, Button, Nav} from 'react-bootstrap';
+import Datetime from 'react-datetime';
+import 'react-datetime/css/react-datetime.css';
 
 export default class Reminders extends React.Component{
 
@@ -20,9 +22,12 @@ export default class Reminders extends React.Component{
       pastReminders: [],
       message: '',
       phoneNumber: '',
-      scheduleDateTime: '',
+      scheduleDateTime: moment(),
     };
     this.getReminders();
+    this.handleAddMessage = this.handleAddMessage.bind(this);
+    this.handleAddNumber = this.handleAddNumber.bind(this);
+    this.handleAddDate = this.handleAddDate.bind(this);
   }
 
   getReminders() {
@@ -136,14 +141,125 @@ export default class Reminders extends React.Component{
       });
   }
 
+  handleAddMessage(event){
+    this.setState( {message: event.target.value });
+  }
+
+  handleAddNumber(event){
+    this.setState( {phoneNumber: event.target.value });
+  }
+
+  isValidDate(current){
+    const yesterday = moment().subtract( 1, 'day' );
+    return current.isAfter(yesterday);
+  }
+
+  handleAddDate(date){
+    this.setState({ scheduleDateTime: date.format('DD/MM/YYYY hh:mm A')  })
+  }
+
   render() {
       return(
-        <div className="container">
-          <HeaderNav />"
-          <Row>
-            <Col md={6}> Sushant </Col>
-            <Col md={6}> Yadav </Col>
-          </Row>
+        <div>
+          <Nav className="navbar navbar-inverse">
+            <div className="container-fluid">
+              <div className="navbar-header pull-right">
+                <ul className="nav navbar-nav navbar-right">
+                  <li> <a href="#">John@example.com <span className="glyphicon glyphicon-user"> </span></a></li>
+
+                </ul>
+              </div>
+            </div>
+          </Nav>
+          <div className="container">
+            <Row>
+              <h5>Add Reminder</h5>
+              <Col sm={5}>
+                <FormGroup
+                  controlId="addMessage"
+                >
+                  <FormControl
+                    type="text"
+                    value={this.state.message}
+                    placeholder="Add reminder message"
+                    onChange={this.handleAddMessage}
+                  />
+                </FormGroup>
+              </Col>
+              <Col sm={3}>
+                <FormGroup
+                  controlId="addPhone"
+                >
+                  <FormControl
+                    type="text"
+                    value={this.state.phoneNumber}
+                    placeholder="Phone Number"
+                    onChange={this.handleAddNumber}
+                  />
+                </FormGroup>
+              </Col>
+              <Col sm={3}>
+                <Datetime
+                  value={this.state.scheduleDateTime}
+                  isValidDate={this.isValidDate}
+                  onChange={this.handleAddDate}
+                />
+              </Col>
+              <Col sm={1}>
+                <Button bsStyle="primary" bsSize="sm" > Add</Button>
+              </Col>
+            </Row>
+            <Row>
+              <h5><a>Upcoming Reminders</a></h5>
+              <Col sm={12}>
+                <ul className="products" style={{listStyleType: 'circle'}}>
+                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
+                    <button type="button" className="btn btn-primary">Edit</button>
+                    <button className="btn btn-danger" type="submit">Remove</button>
+                  </li>
+
+                  <div className="clearfix"> </div>
+
+                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
+                    <button type="button" className="btn btn-primary">Edit</button>
+                    <button className="btn btn-danger" type="submit">Remove</button>
+                  </li>
+
+                  <div className="clearfix"> </div>
+
+                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
+                    <button type="button" className="btn btn-primary">Edit</button>
+                    <button className="btn btn-danger" type="submit">Remove</button>
+                  </li>
+                </ul>
+              </Col>
+            </Row>
+            <Row>
+              <h5><a>Past Reminders</a></h5>
+              <Col sm={12}>
+                <ul className="reminder-past">
+                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
+                    <button type="button" className="btn btn-primary">Remind Again</button>
+                    <button className="btn btn-danger" type="submit">Remove</button>
+                  </li>
+
+                  <div className="clearfix"> </div>
+
+                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
+                    <button type="button" className="btn btn-primary">Remind Again</button>
+                    <button className="btn btn-danger" type="submit">Remove</button>
+                  </li>
+
+                  <div className="clearfix"> </div>
+
+                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
+                    <button type="button" className="btn btn-primary">Remind Again</button>
+                    <button className="btn btn-danger" type="submit">Remove</button>
+                  </li>
+                </ul>
+              </Col>
+            </Row>
+          </div>
         </div>
       );
   }
