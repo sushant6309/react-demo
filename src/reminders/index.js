@@ -7,8 +7,8 @@ import './index.css';
 import Middleware from '../auth/middleware';
 import moment from 'moment';
 import _ from 'lodash';
-import Header from '../layouts/header';
-
+import HeaderNav from '../layouts/header';
+import {Col, Row} from 'react-bootstrap';
 
 export default class Reminders extends React.Component{
 
@@ -139,7 +139,11 @@ export default class Reminders extends React.Component{
   render() {
       return(
         <div className="container">
-        <Header />
+          <HeaderNav />"
+          <Row>
+            <Col md={6}> Sushant </Col>
+            <Col md={6}> Yadav </Col>
+          </Row>
         </div>
       );
   }
