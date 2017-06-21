@@ -1,5 +1,7 @@
 /**
  * Created by apple on 17/06/17.
+ *
+ * Reminders
  */
 import React from 'react';
 import AppAPI from '../lib/api';
@@ -7,8 +9,7 @@ import './index.css';
 import Middleware from '../auth/middleware';
 import moment from 'moment';
 import _ from 'lodash';
-import HeaderNav from '../layouts/header';
-import {Col, Row, FormControl, FormGroup, Button, Nav} from 'react-bootstrap';
+import {Col, Row, FormControl, FormGroup, Button} from 'react-bootstrap';
 import Datetime from 'react-datetime';
 import 'react-datetime/css/react-datetime.css';
 
@@ -16,18 +17,27 @@ export default class Reminders extends React.Component{
 
   constructor(props){
     super(props);
-    // Middleware();
+     Middleware();
     this.state = {
       upComingReminders:[],
       pastReminders: [],
       message: '',
+      editMessage: '',
       phoneNumber: '',
+      editPhoneNumber: '',
       scheduleDateTime: moment(),
+      editScheduleDateTime: moment(),
+      user: sessionStorage.getItem('user'),
     };
     this.getReminders();
     this.handleAddMessage = this.handleAddMessage.bind(this);
     this.handleAddNumber = this.handleAddNumber.bind(this);
     this.handleAddDate = this.handleAddDate.bind(this);
+    this.handleEditMessage = this.handleEditMessage.bind(this);
+    this.handleEditNumber = this.handleEditNumber.bind(this);
+    this.handleEditDate = this.handleEditDate.bind(this);
+    this.createReminders = this.createReminders.bind(this);
+     this.deleteReminder = this.deleteReminder.bind(this);
   }
 
   getReminders() {
@@ -44,6 +54,7 @@ export default class Reminders extends React.Component{
 
       _.forEach(response, function (reminder) {
         if(moment().isBefore(moment(reminder.scheduled_datetime))){
+          reminder['edit'] = false;
           upComingReminders.push(reminder);
         }else {
           pastReminders.push(reminder);
@@ -62,9 +73,10 @@ export default class Reminders extends React.Component{
   }
 
   createReminders(){
+    const cloneDate = this.state.scheduleDateTime.clone();
     const request = new Promise(async (resolve, reject) =>
       AppAPI.reminders.post({
-        scheduled_datetime: this.state.scheduleDateTime,
+        scheduled_datetime: cloneDate.format(),
         message: this.state.message,
         phone_number: this.state.phoneNumber
       })
@@ -73,12 +85,16 @@ export default class Reminders extends React.Component{
         }).catch(err => reject(err)));
 
     request.then((response) => {
-
       let upComingReminders = this.state.upComingReminders;
+      response.edit = false;
+      response.scheduled_datetime = moment(response.scheduled_datetime);
       upComingReminders.push(response);
 
       this.setState({
         upComingReminders,
+        message: '',
+        phoneNumber: '',
+        scheduleDateTime: moment()
       });
 
     })
@@ -87,12 +103,12 @@ export default class Reminders extends React.Component{
     });
   }
 
-  updateReminder(id){
+  updateReminder(id ,key){
     const request = new Promise(async (resolve, reject) =>
       AppAPI.reminders.put({
-        scheduled_datetime: this.state.scheduleDateTime,
-        message: this.state.message,
-        phone_number: this.state.phoneNumber,
+        scheduled_datetime: this.state.editScheduleDateTime.format(),
+        message: this.state.editMessage,
+        phone_number: this.state.editPhoneNumber,
         id: id
       })
       .then((response) => {
@@ -102,19 +118,15 @@ export default class Reminders extends React.Component{
     request.then((response) => {
 
       let upComingReminders = this.state.upComingReminders;
-      let pastReminders = this.state.pastReminders;
-
-      if(moment().isBefore(moment(response.scheduled_datetime))){
-        upComingReminders.push(response);
-      }else {
-        pastReminders.push(response);
-      }
-
-      upComingReminders.push(response);
+        response.edit = false;
+        response.scheduled_datetime = moment(response.scheduled_datetime);
+        upComingReminders[key] = response;
 
       this.setState({
         upComingReminders,
-        pastReminders,
+        editMessage: '',
+        editPhoneNumber: '',
+        editScheduleDateTime: moment(),
       });
 
     })
@@ -123,7 +135,7 @@ export default class Reminders extends React.Component{
     });
   }
 
-  deleteReminder(id){
+  deleteReminder(id, key, type){
     const request = new Promise(async (resolve, reject) =>
       AppAPI.reminders.delete({
         id: id
@@ -133,11 +145,29 @@ export default class Reminders extends React.Component{
         }).catch(err => reject(err)));
 
     request.then((response) => {
-
-      //ToDo: Remove reminder from its associated array.
+      if(type === 'past'){
+        let pastReminders = this.state.pastReminders;
+        pastReminders.splice(key,1);
+        this.setState({ pastReminders });
+        return true;
+      }
+      let upComingReminders = this.state.upComingReminders;
+      upComingReminders.splice(key,1);
+      this.setState({ upComingReminders });
+      return true;
     })
       .catch(err => {
-        console.debug(err);
+        //Just a temp solution as the server is not responding in json object.
+        if(type === 'past'){
+          let pastReminders = this.state.pastReminders;
+          pastReminders.splice(key,1);
+          this.setState({ pastReminders });
+          return true;
+        }
+        let upComingReminders = this.state.upComingReminders;
+        upComingReminders.splice(key,1);
+        this.setState({ upComingReminders });
+        return true;
       });
   }
 
@@ -149,31 +179,165 @@ export default class Reminders extends React.Component{
     this.setState( {phoneNumber: event.target.value });
   }
 
+  handleAddDate(date){
+    this.setState({ scheduleDateTime: date })
+  }
+
+  handleEditMessage(event){
+    this.setState( {editMessage: event.target.value });
+  }
+
+  handleEditNumber(event){
+    this.setState( {editPhoneNumber: event.target.value });
+  }
+
+  handleEditDate(date){
+    this.setState({ editScheduleDateTime: date })
+  }
+
   isValidDate(current){
     const yesterday = moment().subtract( 1, 'day' );
     return current.isAfter(yesterday);
   }
 
-  handleAddDate(date){
-    this.setState({ scheduleDateTime: date.format('DD/MM/YYYY hh:mm A')  })
+  editReminder(key){
+    let reminders = this.state.upComingReminders;
+    reminders[key].edit = true;
+    this.setState({
+      editScheduleDateTime : moment(reminders[key].scheduled_datetime),
+      editMessage: reminders[key].message,
+      editPhoneNumber: reminders[key].number,
+      editId: reminders[key].id,
+      upComingReminders: reminders,
+    });
+
   }
+
+  remindAgain(key){
+    const reminder = this.state.pastReminders[key];
+    this.setState({
+      message: reminder.message,
+      phoneNumber: reminder.phone_number,
+      scheduleDateTime: moment(),
+    });
+  }
+
+  cancelUpdate(key) {
+    let upComingReminders = this.state.upComingReminders;
+    upComingReminders[key].edit = false;
+    this.setState({
+      editMessage: '',
+      phoneNumber: '',
+      editScheduleDateTime: moment(),
+      upComingReminders
+    })
+  }
+
+  logout() {
+    sessionStorage.clear();
+    window.location.href='/';
+  }
+
+
+  renderUpcomingReminders(){
+    const upComingReminders = _.map(this.state.upComingReminders,(reminder, key) =>{
+      if(!reminder.edit){
+        return(<Row key={key.toString()} >
+          <Col sm={12}>
+            <div className="products" >
+              <h4 className="content">
+                <span className="glyphicon glyphicon-unchecked"> </span> {typeof reminder !== 'undefined'?reminder.message: null}
+                <span className="badge badge-default">
+                  {typeof reminder !== 'undefined'?moment(reminder.scheduled_datetime).format('MMMM DD at hh:mm a'): '-'}
+                </span>
+              </h4>
+              <div className="pull-right">
+                <Button bsStyle="primary" onClick={()=>{this.editReminder(key)}}>Edit</Button>
+                <Button bsStyle="danger" onClick={()=>{this.deleteReminder(reminder.id, key, 'upComing')}}>Remove</Button>
+              </div>
+            </div>
+          </Col>
+        </Row>);
+      }else {
+        return (<Row key={key.toString()}>
+          <Col sm={5}>
+            <FormGroup
+              controlId="editMessage"
+            >
+              <FormControl
+                type="text"
+                value={this.state.editMessage}
+                placeholder="Add reminder message"
+                onChange={this.handleEditMessage}
+              />
+            </FormGroup>
+          </Col>
+          <Col sm={3}>
+            <FormGroup
+              controlId="addPhone"
+            >
+              <FormControl
+                type="text"
+                value={this.state.editPhoneNumber}
+                placeholder="Phone Number"
+                onChange={this.handleEditNumber}
+              />
+            </FormGroup>
+          </Col>
+          <Col sm={3}>
+            <Datetime
+              value={this.state.editScheduleDateTime}
+              isValidDate={this.isValidDate}
+              onChange={this.handleEditDate}
+            />
+          </Col>
+          <Col sm={1}>
+            <Button bsStyle="primary" onClick={()=>{this.updateReminder(reminder.id, key)}}> Update</Button>
+            <Button bsStyle="default" onClick={()=>{this.cancelUpdate(key)}}> Cancel</Button>
+          </Col>
+        </Row>);
+      }
+    });
+    return upComingReminders;
+  }
+
+  renderPastReminders(){
+    return this.state.pastReminders.map((reminder, key) =>{
+
+        return(<Row key={key.toString()} style={{marginTop: 50}}><Col sm={12}><div className="products" key={key.toString()}>
+          <h4 className="content"><span className="glyphicon glyphicon-ok"> </span> <strike>{reminder.message}</strike> <span className="badge badge-default">{moment(reminder.scheduled_datetime).format('MMMM DD at hh:mm a')}</span></h4>
+          <div className="pull-right">
+          <Button bsStyle="primary" onClick={()=>{this.remindAgain(key)}}>Remind Again</Button>
+          <Button bsStyle="danger"  onClick={()=>{this.deleteReminder(reminder.id, key, 'past')}}>Remove</Button>
+          </div>
+        </div></Col></Row>);
+    });
+  }
+
 
   render() {
       return(
         <div>
-          <Nav className="navbar navbar-inverse">
+          <div className="navbar navbar-inverse">
             <div className="container-fluid">
               <div className="navbar-header pull-right">
                 <ul className="nav navbar-nav navbar-right">
-                  <li> <a href="#">John@example.com <span className="glyphicon glyphicon-user"> </span></a></li>
-
+                  <li>
+                    <a style={{cursor:'pointer'}} onClick={()=>{this.logout()}}> {this.state.user}
+                      <span className="glyphicon glyphicon-log-out"> </span>
+                    </a>
+                  </li>
                 </ul>
               </div>
             </div>
-          </Nav>
+          </div>
           <div className="container">
             <Row>
-              <h5>Add Reminder</h5>
+              <Col sm={12}>
+                <h4>Add Reminder</h4>
+              </Col>
+            </Row>
+            <Row>
               <Col sm={5}>
                 <FormGroup
                   controlId="addMessage"
@@ -206,57 +370,16 @@ export default class Reminders extends React.Component{
                 />
               </Col>
               <Col sm={1}>
-                <Button bsStyle="primary" bsSize="sm" > Add</Button>
+                <Button bsStyle="primary" onClick={this.createReminders} > Add</Button>
               </Col>
             </Row>
+
             <Row>
-              <h5><a>Upcoming Reminders</a></h5>
               <Col sm={12}>
-                <ul className="products" style={{listStyleType: 'circle'}}>
-                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
-                    <button type="button" className="btn btn-primary">Edit</button>
-                    <button className="btn btn-danger" type="submit">Remove</button>
-                  </li>
-
-                  <div className="clearfix"> </div>
-
-                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
-                    <button type="button" className="btn btn-primary">Edit</button>
-                    <button className="btn btn-danger" type="submit">Remove</button>
-                  </li>
-
-                  <div className="clearfix"> </div>
-
-                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
-                    <button type="button" className="btn btn-primary">Edit</button>
-                    <button className="btn btn-danger" type="submit">Remove</button>
-                  </li>
-                </ul>
-              </Col>
-            </Row>
-            <Row>
-              <h5><a>Past Reminders</a></h5>
-              <Col sm={12}>
-                <ul className="reminder-past">
-                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
-                    <button type="button" className="btn btn-primary">Remind Again</button>
-                    <button className="btn btn-danger" type="submit">Remove</button>
-                  </li>
-
-                  <div className="clearfix"> </div>
-
-                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
-                    <button type="button" className="btn btn-primary">Remind Again</button>
-                    <button className="btn btn-danger" type="submit">Remove</button>
-                  </li>
-
-                  <div className="clearfix"> </div>
-
-                  <li><h5 className="content">Discussion with manager regarding new project release <span className="badge badge-default">July 30 at 10:30 a:m</span></h5>
-                    <button type="button" className="btn btn-primary">Remind Again</button>
-                    <button className="btn btn-danger" type="submit">Remove</button>
-                  </li>
-                </ul>
+            <Col sm={12}><h4><a className="heading">Upcoming Reminders</a></h4></Col>
+                {this.renderUpcomingReminders()}
+            {(this.state.pastReminders.length > 0) && <Row><Col sm={12}><h4><a className="heading">Past Reminders</a></h4></Col></Row>}
+              {()=>{this.renderPastReminders()}}
               </Col>
             </Row>
           </div>

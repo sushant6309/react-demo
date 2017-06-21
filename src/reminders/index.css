@@ -1,5 +1,5 @@
 .container{
-    width: 100%;
+    width: 98%;
     height: 100%;
     background-color: white;
     padding-bottom: 228px;
@@ -7,33 +7,18 @@
     padding-top: 10px;
 }
 .products {
-    margin: 0;
-    list-style-type: circle;
-    padding: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    overflow: hidden;
 }
-.products li{
-    width: 100%;
-    /*display: inline-block;*/
+.heading {
+    text-decoration: underline;
+    color: #2c3e50;
+    cursor:pointer;
 }
 .content{
     width: 83%;
     float: left;
-}
-
-.reminder-past {
-    margin: 0;
-    padding: 0;
-}
-.reminder-past li{
-    width: 100%;
-    list-style-type: none;
-}
-.reminder-past li:before {
-    content: '✓';
-    float: left;
-    margin-left: -13px;
-    margin-top: 8px;
-    margin-right: 10px;
 }
 .navbar-inverse{
     border-radius: 0;

@@ -21,7 +21,7 @@ export default {
   endpoints: new Map([
     ['register', 'register/'], // If you change the key, update the reference below
     ['login', 'rest-auth/login/'],
-    ['reminders', 'reminders'],
+    ['reminders', 'reminders/'],
   ]),
 
   // Which 'endpoint' key deals with our tokens?

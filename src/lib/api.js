@@ -10,7 +10,6 @@ import { ErrorMessages, APIConfig } from '../config/index';
 const HOSTNAME = APIConfig.hostname;
 const ENDPOINTS = APIConfig.endpoints;
 
-let USER_AGENT = 'Reports';
 
 
 // Enable debug output when in Debug mode
@@ -97,7 +96,6 @@ function fetcher(method, inputEndpoint, inputParams, body) {
         Accept: 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-Requested-With': 'XMLHttpRequest',
-        'Access-Control-Allow-Origin': '*',
       },
     };
 
@@ -122,7 +120,7 @@ function fetcher(method, inputEndpoint, inputParams, body) {
         // Check if there's still an 'id' prop, /{id}?
         if (params.id !== undefined) {
           if (typeof params.id === 'string' || typeof params.id === 'number') {
-            endpoint += `/${params.id}`;
+            endpoint += `${params.id}/`;
           }
         }
 
@@ -131,7 +129,7 @@ function fetcher(method, inputEndpoint, inputParams, body) {
 
         // String or Number - eg. /recipes/23
       } else if (typeof params === 'string' || typeof params === 'number') {
-        urlParams = `/${params}`;
+        urlParams = `${params}/`;
 
         // Something else? Just log an error
       } else {
@@ -142,7 +140,7 @@ function fetcher(method, inputEndpoint, inputParams, body) {
     // Add Body
     if (body) {req.body = JSON.stringify(body);}
 
-    if(method === 'POST'){
+    if(method === 'POST' || method === 'PUT'){
       req.body = serialize(params);
     }
 
@@ -168,7 +166,11 @@ function fetcher(method, inputEndpoint, inputParams, body) {
         }
 
         // Only continue if the header is successful
-        if (rawRes && rawRes.status === 200) { return jsonRes; }
+        if (rawRes ) {
+          if(rawRes.status === 200 || rawRes.status === 201) {
+            return jsonRes;
+          }
+        }
         throw jsonRes;
       })
       .then((res) => {

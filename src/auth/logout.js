@@ -1,5 +1,7 @@
 /**
  * Created by apple on 20/06/17.
+ *
+ * Logout
  */
 import React from 'react';
 
