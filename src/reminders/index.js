@@ -272,7 +272,7 @@ export default class Reminders extends React.Component{
               />
             </FormGroup>
           </Col>
-          <Col sm={3}>
+          <Col sm={2}>
             <FormGroup
               controlId="addPhone"
             >
@@ -284,14 +284,14 @@ export default class Reminders extends React.Component{
               />
             </FormGroup>
           </Col>
-          <Col sm={3}>
+          <Col sm={2}>
             <Datetime
               value={this.state.editScheduleDateTime}
               isValidDate={this.isValidDate}
               onChange={this.handleEditDate}
             />
           </Col>
-          <Col sm={1}>
+          <Col sm={3}>
             <Button bsStyle="primary" onClick={()=>{this.updateReminder(reminder.id, key)}}> Update</Button>
             <Button bsStyle="default" onClick={()=>{this.cancelUpdate(key)}}> Cancel</Button>
           </Col>
